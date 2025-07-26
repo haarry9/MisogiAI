@@ -39,6 +39,6 @@ people = [
     {"name": "Diana", "age": 24}
 ]
 
-adult_names = [person["name"] for person in people if person["age"] > 25]
+adults = [person["name"] for person in people if person["age"] > 25]
 
-print(adult_names)
+print(adults)
