@@ -1,0 +1,1 @@
+menu_db = {}  # Key: id (int), Value: FoodItem instance
