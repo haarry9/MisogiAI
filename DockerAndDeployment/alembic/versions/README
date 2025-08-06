@@ -1,0 +1,3 @@
+# Alembic Migration Scripts
+
+Place your migration scripts in this directory. Each migration file will be auto-generated or manually created by Alembic to manage schema changes for the cloud database.

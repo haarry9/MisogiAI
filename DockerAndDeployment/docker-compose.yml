@@ -1,0 +1,81 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: restaurant_app
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - db
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-restaurant}
+    ports:
+      - "5432:5432"
+    restart: always
+    # For cloud DB, comment out this service and use external connection
+
+  celery-worker:
+    build: .
+    container_name: celery_worker
+    command: celery -A app.celery_worker.celery worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - app
+      - redis
+    restart: always
+
+  celery-beat:
+    build: .
+    container_name: celery_beat
+    command: celery -A app.celery_worker.celery beat --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - app
+      - redis
+    restart: always
+
+  flower:
+    image: mher/flower
+    container_name: flower
+    command: flower --broker=${CELERY_BROKER_URL:-redis://redis:6379/0} --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    restart: always
